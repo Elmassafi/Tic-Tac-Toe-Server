@@ -19,7 +19,7 @@ class ServerGUI extends JFrame implements ActionListener {
         super(" Server");
         setUpWindow();
         addEventListeners();
-        int myLocalVar = Game.getClients();
+        int myLocalVar = Server.getClients();
         clientList.setText("" + myLocalVar);
     }
 
@@ -56,7 +56,7 @@ class ServerGUI extends JFrame implements ActionListener {
             System.exit(0);
         }
         if (source == clients_total) {
-            int myLocalVar = Game.getClients();
+            int myLocalVar = Server.getClients();
             clientList.setText("Total Connected Today: " + myLocalVar);
         }
     }

@@ -14,7 +14,7 @@ public class Launcher {
         //System.out.println(dateFormat.format(cal.getTime()));
         try {
             java.rmi.registry.LocateRegistry.createRegistry(1099);
-            Naming.rebind("tictactoe", new Game());
+            Naming.rebind("tictactoe", new Server());
             Common.logger.log(Level.SEVERE, "le serveur a démarré avec succès au port: 1099");
         } catch (Exception e) {
             Common.logger.log(Level.WARNING, "le serveur a échoué avec l'erreur " + e.getMessage());
