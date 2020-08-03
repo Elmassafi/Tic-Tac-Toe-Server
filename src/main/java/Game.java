@@ -8,22 +8,29 @@ import java.util.*;
  */
 public class Game extends UnicastRemoteObject implements GameDistant {
 
-    public Map<String, Client> players = new HashMap<>();
     /*
-        Variables
-     */
-    private List<String> messages = new ArrayList<>();
-    private List<String> moves = Arrays.asList("0", "1", "2", "3", "4", "5", "6", "7", "8");
+    Variables
+ */
+    public Map<String, Client> players;
+    private List<String> messages;
+    private List<String> moves;
+    private String turn;
+    private Server server;
+    private boolean notyet = true;
 
-    protected Game() throws RemoteException {
-
+    protected Game(Server server) throws RemoteException {
+        players = new HashMap<>();
+        this.messages = new ArrayList<>();
+        this.moves = Arrays.asList("0", "1", "2", "3", "4", "5", "6", "7", "8");
+        this.turn = "X";
+        this.server = server;
     }
 
     @Override
     public void sendMessage(String message) throws RemoteException {
         for (Map.Entry<String, Client> entry : players.entrySet()) {
-            String key = (String) entry.getKey();
-            Client value = (Client) entry.getValue();
+            String key = entry.getKey();
+            Client value = entry.getValue();
             value.addMessage(message);
         }
         messages.add(message);
@@ -31,32 +38,45 @@ public class Game extends UnicastRemoteObject implements GameDistant {
 
     @Override
     public void playMove(String mark, int move) throws RemoteException {
-        String markAginst = mark.equals("X") ? "O" : "X";
-        players.get(markAginst).newMove(move);
-        moves.set(move, mark);
-        String result = checkWin();
-        if ("X".equals(result) || "O".equals(result)) {
-            gameDone(result);
+        if (notyet) {
+            server.fresh();
+            notyet = false;
+        }
+        if (mark.equals(turn)) {
+            for (Map.Entry<String, Client> entry : players.entrySet()) {
+                String key =  entry.getKey();
+                Client value =entry.getValue();
+                value.newMove(mark, move);
+            }
+            moves.set(move, mark);
+            this.turn = mark.equals("X") ? "O" : "X";
+            String result = checkWin();
+            if ("X".equals(result) || "O".equals(result)) {
+                gameDone(result);
+            }
         }
     }
 
-    private void gameDone(String result) {
-        for (Map.Entry<String, Client> entry : players.entrySet()) {
-            String key = (String) entry.getKey();
-            Client value = (Client) entry.getValue();
-            try {
-                value.winner(result);
-            } catch (RemoteException e) {
-                e.printStackTrace();
-            }
+    public void gameDone(String winnerMark) {
+        this.turn = "No";
+        String loserMark = winnerMark.equals("X") ? "O" : "X";
+        Client winner = players.get(winnerMark);
+        Client loser = players.get(loserMark);
+        try {
+            winner.winner();
+            loser.loser();
+            sendMessage("Server : " + winner.getName() + "a gagné le match");
+        } catch (RemoteException e) {
+            e.printStackTrace();
         }
+
     }
 
     private String checkWin() {
         String result = "No";
         int checkNumber = 0;
         int i = 0;
-        while (checkNumber > 2) {
+        while (checkNumber < 2) {
             //HorizontalChecks +1
             result = checks(i, 1);
             if ("X".equals(result) || "O".equals(result)) {
@@ -66,7 +86,7 @@ public class Game extends UnicastRemoteObject implements GameDistant {
             checkNumber++;
         }
         checkNumber = 0;
-        while (checkNumber > 2) {
+        while (checkNumber < 2) {
             //HorizontalChecks +1
             result = checks(i, 3);
             if ("X".equals(result) || "O".equals(result)) {
@@ -79,18 +99,35 @@ public class Game extends UnicastRemoteObject implements GameDistant {
         if ("X".equals(result) || "O".equals(result)) {
             return result;
         }
-        result = checks(2, 4);
+        result = checks(2, 2);
         if ("X".equals(result) || "O".equals(result)) {
             return result;
         }
-        return "No";
+        return result;
     }
 
     //Horizontal checks
     private String checks(int i, int next) {
-        if (moves.get(i).equals(moves.get(i + next)) && moves.get(i).equals(moves.get(i + next))) {
+        if (moves.get(i).equals(moves.get(i + next)) && moves.get(i).equals(moves.get(i + 2 * next))) {
             return moves.get(i);
         }
         return "No";
+    }
+
+    @Override
+    public void abandonGame(String name) throws RemoteException {
+        String result = "";
+        for (Map.Entry<String, Client> entry : players.entrySet()) {
+            String key =entry.getKey();
+            Client value =  entry.getValue();
+            if (value.getName().equals(name)) {
+                result = key;
+            }
+        }
+        if ("X".equals(result) || "O".equals(result)) {
+            gameDone(result);
+            sendMessage("Server : " + name + " a abandonné le jeu");
+            server.gameDone();
+        }
     }
 }

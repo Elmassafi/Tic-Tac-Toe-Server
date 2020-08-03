@@ -9,9 +9,10 @@ public interface Client extends Remote {
 
     void addMessage(String message) throws RemoteException;
 
-    void newMove(int move) throws RemoteException;
+    void newMove(String mark,int move) throws RemoteException;
 
     String getName() throws RemoteException;
 
-    void winner(String mark) throws RemoteException;
+    void winner() throws RemoteException;
+    void loser() throws RemoteException;
 }

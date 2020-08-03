@@ -6,6 +6,6 @@ import java.rmi.RemoteException;
  */
 public interface GameDistant extends Remote {
     void sendMessage(String message) throws RemoteException;
-
-    void playMove(String mark, int move) throws RemoteException;
+    void playMove(String mark,int move) throws RemoteException;
+    void abandonGame(String name) throws RemoteException;
 }
