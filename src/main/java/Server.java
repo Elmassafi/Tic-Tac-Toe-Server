@@ -4,37 +4,37 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class Server extends UnicastRemoteObject implements ServerDistant {
 
 
     //Declare class variables
-    private static int count = 0;
-    private static boolean check = true;
-    private static String TICTAC = "";
-    private static int client_count = 0;
-    private final List<Client> clients;
-    private List<Client> clientsInWait = new ArrayList<>();
+    private static final int count = 0;
+    private static final boolean check = true;
+    private static final String TICTAC = "";
+
+    private final List<Player> players;
+    int sessionId = -1;
+    private List<Player> playersInWait = new ArrayList<>();
     private Game game = new Game(this);
     private boolean notyet = true;
 
-
     Server() throws RemoteException {
-        clients = new ArrayList<>();
+        players = new ArrayList<>();
     }
 
-    public static int getClients() {
-        return client_count;
+    public int getClientsNumber() {
+        return this.players.size();
     }
 
-    public synchronized void registerClient(Client client) throws RemoteException {
-        boolean check = isClientExist(client.getName());
+    public synchronized void registerPlayer(Player player) throws RemoteException {
+        boolean check = isClientExist(player.getName());
         if (!check) {
-            this.clients.add(client);
-            Common.logger.info("le client " + client.getName() + " a été enregistré");
-            client_count++;
+            this.players.add(player);
+            Common.logger.info("le client " + player.getName() + " a été enregistré");
         } else {
-            Common.logger.info("le client " + client.getName() + " a été enregistré");
+            Common.logger.info("le client " + player.getName() + " a été enregistré");
             throw new RemoteException("plz change the pseudo name");
         }
     }
@@ -45,17 +45,29 @@ public class Server extends UnicastRemoteObject implements ServerDistant {
     }
 
     private boolean isClientExist(String name) throws RemoteException {
-        for (Client client : clients) {
-            if (client.getName().equals(name)) {
+        for (Player player : players) {
+            if (player.getName().equals(name)) {
                 return true;
             }
         }
         return false;
     }
 
-    public void disconnectClient(String name) {
-        client_count--;
-        this.clients.removeIf(a -> {
+    @Override
+    public void disconnectPlayer(Player player) throws RemoteException {
+        boolean removed = this.players.remove(player);
+        playersInWait.remove(player);
+        System.out.println(removed);
+        System.gc();
+        System.runFinalization();
+        if (removed) {
+            Common.logger.info("joueur " + player.getName() + "  a quitté le serveur");
+        }
+        Common.logger.info("il y a " + this.players.size() + " clients sur le serveur");
+    }
+
+    public void removeByName(String name) {
+        this.players.removeIf(a -> {
             boolean temp = false;
             try {
                 temp = a.getName().equals(name);
@@ -65,44 +77,91 @@ public class Server extends UnicastRemoteObject implements ServerDistant {
             }
             return temp;
         });
-        Common.logger.info("il y a " + this.clients.size() + " clients sur le serveur");
     }
 
     @Override
-    public String joinRoom(Client client) throws RemoteException {
-        if (clientsInWait.size() == 0) {
-            game.players.put("X", client);
-            clientsInWait.add(client);
-            return "X";
-        } else if (clientsInWait.size() == 1) {
-            game.players.put("O", client);
-            return "O";
+    public String joinRoom(Player player) throws RemoteException {
+        try {
+            System.out.println("clientsInWait " + playersInWait.size());
+            if (playersInWait.size() == 0) {
+                this.game = new Game(this);
+                game.gameStatus = GameStatus.Waiting;
+                sessionId = -1;
+                this.notyet = true;
+                playersInWait.add(player);
+                game.players.put("X", player);
+                return "X";
+            } else if (playersInWait.size() == 1) {
+                playersInWait.add(player);
+                game.players.put("O", player);
+                System.out.println("Hi I am here");
+                informPlayers(1);
+                return "O";
+            }
+        } catch (NullPointerException e) {
+            e.printStackTrace();
         }
         throw new RemoteException("Server is full");
     }
 
+
     @Override
     public int getSessionId(String name) throws RemoteException, MalformedURLException {
-        if (clientsInWait.size() == 1) {
+        System.out.println("clientsInWait " + playersInWait.size());
+        if (playersInWait.size() == 2) {
             if (notyet) {
                 try {
-                    Naming.rebind("tictactoe/1",
-                            game);
+                    sessionId = new Random().nextInt(10000) + 1;
+                    //   = ThreadLocalRandom.current().nextInt(1, 10000 + 1);
+                    Naming.rebind("tictactoe/" + sessionId, game);
                     notyet = false;
+                    Common.logger.info("sessionId: " + sessionId);
                 } catch (RemoteException | MalformedURLException e) {
                     Common.logger.warning(e.getMessage());
+                    throw e;
                 }
             }
-            return 1;
         }
-        return 0;
+        if (sessionId != -1) {
+            game.gameStatus = GameStatus.Running;
+            fresh();
+        }
+        return sessionId;
     }
 
-    public void gameDone() throws RemoteException {
-        this.game = new Game(this);
+    @Override
+    public String playVsComputer(Player player) throws RemoteException {
+        try {
+            Game game = new Game(this);
+            Player computer = new ComputerPlayer(game, "O", new Minimax("O"));
+            game.players.put("X", player);
+            game.players.put("O", computer);
+            game.gameStatus = GameStatus.Running;
+            Naming.rebind("tictactoe/" + 0, game);
+            return "X";
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            return "NO";
+        }
     }
-    public void fresh(){
-        clientsInWait = new ArrayList<>();
+
+    private void fresh() {
+        playersInWait = new ArrayList<>();
+        Common.logger.info("new Clients In Wait");
+    }
+
+    public void informPlayers(int res) throws RemoteException {
+        playersInWait.get(0).addMessage(playersInWait.get(0).getName() + " rejoint le jeu ");
+        playersInWait.get(0).meetingRoomRespond(res);
+            /*for (Player player : playersInWait) {
+
+            }*/
+            /*for (Map.Entry<String, Player> entry : players.entrySet()) {
+                String key = entry.getKey();
+                Player value = entry.getValue();
+                player.addMessage(player.getName() + " rejoint le jeu en tant que joueur "+key);
+            }*/
+
     }
 }
 
