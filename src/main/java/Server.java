@@ -14,7 +14,7 @@ public class Server extends UnicastRemoteObject implements ServerDistant {
     private final List<Player> players;
     int sessionId = -1;
     private List<Player> playersInWait = new ArrayList<>();
-    private Game game = new Game(this);
+    private Game game;
     private boolean notyet = true;
     private List<String> names = new ArrayList<>();
 
@@ -128,10 +128,22 @@ public class Server extends UnicastRemoteObject implements ServerDistant {
     }
 
     @Override
-    public String playVsComputer(Player player) throws RemoteException {
+    public String playVsComputer(Player player, String algorithmName) throws RemoteException {
         try {
+            algorithmName = algorithmName.trim().toLowerCase();
+            Algorithm algorithm;
+            switch (algorithmName) {
+                case "minimax":
+                    algorithm = new Minimax("O");
+                    break;
+                case "alphaBeta":
+                    algorithm = new AlphaBeta("O");
+                    break;
+                default:
+                    algorithm = new RandomAlgorithm();
+            }
             Game game = new Game(this);
-            Player computer = new ComputerPlayer(game, "O", new AlphaBeta("O"));
+            Player computer = new ComputerPlayer(game, "O", algorithm);
             game.players.put("X", player);
             game.players.put("O", computer);
             game.gameStatus = GameStatus.Running;
@@ -153,14 +165,6 @@ public class Server extends UnicastRemoteObject implements ServerDistant {
         playersInWait.get(0).addMessage(names.get(0) + " rejoint le jeu ");
         playersInWait.get(0).addMessage(names.get(1) + " rejoint le jeu en tant que joueur O");
         playersInWait.get(0).meetingRoomRespond(res);
-            /*for (Player player : playersInWait) {
-                   }*/
-            /*for (Map.Entry<String, Player> entry : players.entrySet()) {
-                String key = entry.getKey();
-                Player value = entry.getValue();
-                player.addMessage(player.getName() + " rejoint le jeu en tant que joueur "+key);
-            }*/
-
     }
 }
 

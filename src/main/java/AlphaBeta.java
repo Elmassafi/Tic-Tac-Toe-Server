@@ -10,8 +10,9 @@ public class AlphaBeta implements Algorithm {
     private final Map<String, Integer> scores;
     private final String ai;
     private final String human;
-    // List<String> board;
 
+    // List<String> board;
+//
     public AlphaBeta(String ai) {
         this.ai = ai;
         this.human = ai.equals("X") ? "O" : "X";

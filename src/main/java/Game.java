@@ -46,20 +46,21 @@ public class Game extends UnicastRemoteObject implements GameDistant {
             notyet = false;
         }*/
         System.out.println(mark + " " + move + " turn for" + turn);
-        if (gameStatus.equals(GameStatus.Running)) {
+        String result = Common.checkWin(this.moves);
+        if (!result.equals("No")) {
+            gameDone(result);
+        } else if (gameStatus.equals(GameStatus.Running)) {
             if (mark.equals(turn)) {
                 this.turn = mark.equals("X") ? "O" : "X";
                 moves.set(move, mark);
-                System.out.println("new Board:" + moves);
+                result = Common.checkWin(moves);
+                if (!result.equals("No")) {
+                    gameDone(result);
+                }
                 for (Map.Entry<String, Player> entry : players.entrySet()) {
                     String key = entry.getKey();
                     Player value = entry.getValue();
                     value.newMove(mark, move);
-                }
-                System.out.println(" turn for" + turn);
-                String result = Common.checkWin(moves);
-                if ("X".equals(result) || "O".equals(result)) {
-                    gameDone(result);
                 }
 
             }
@@ -67,19 +68,26 @@ public class Game extends UnicastRemoteObject implements GameDistant {
     }
 
     public void gameDone(String winnerMark) {
-        this.turn = "No";
-        String loserMark = winnerMark.equals("X") ? "O" : "X";
-        Player winner = players.get(winnerMark);
-        Player loser = players.get(loserMark);
         try {
-            winner.winner();
-            loser.loser();
-            sendMessage("Server : " + winner.getName() + "a gagné le match");
-            gameStatus = GameStatus.Completed;
+            this.turn = "No";
+            if (winnerMark.equals("tie")) {
+                for (Map.Entry<String, Player> entry : players.entrySet()) {
+                    String key = entry.getKey();
+                    Player value = entry.getValue();
+                    value.tie();
+                }
+            } else {
+                String loserMark = winnerMark.equals("X") ? "O" : "X";
+                Player winner = players.get(winnerMark);
+                Player loser = players.get(loserMark);
+                winner.winner();
+                loser.loser();
+                sendMessage("Server : " + winner.getName() + "a gagné le match");
+                gameStatus = GameStatus.Completed;
+            }
         } catch (RemoteException e) {
-            e.printStackTrace();
+            Common.logger.warning(e.getMessage());
         }
-
     }
 
     @Override

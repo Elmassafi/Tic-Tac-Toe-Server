@@ -16,5 +16,7 @@ public interface Player extends Remote {
 
     void loser() throws RemoteException;
 
+    void tie() throws RemoteException;
+
     void meetingRoomRespond(int resp) throws RemoteException;
 }

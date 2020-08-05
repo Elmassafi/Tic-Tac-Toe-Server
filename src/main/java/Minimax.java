@@ -52,7 +52,7 @@ public class Minimax implements Algorithm {
 
     private int minimax(List<String> board, int depth, boolean isMaximizing) {
         String result = Common.checkWin(board);
-        System.out.println("check Win result:"+result);
+        System.out.println("check Win result:" + result);
         if (!result.equals("No")) {
             return scores.get(result);
         }
