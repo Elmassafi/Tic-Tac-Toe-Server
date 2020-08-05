@@ -6,19 +6,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+/**
+ * @author Anas EL Massafi
+ */
 public class Server extends UnicastRemoteObject implements ServerDistant {
-
-
-    //Declare class variables
-    private static final int count = 0;
-    private static final boolean check = true;
-    private static final String TICTAC = "";
 
     private final List<Player> players;
     int sessionId = -1;
     private List<Player> playersInWait = new ArrayList<>();
     private Game game = new Game(this);
     private boolean notyet = true;
+    private List<String> names = new ArrayList<>();
 
     Server() throws RemoteException {
         players = new ArrayList<>();
@@ -34,8 +32,8 @@ public class Server extends UnicastRemoteObject implements ServerDistant {
             this.players.add(player);
             Common.logger.info("le client " + player.getName() + " a été enregistré");
         } else {
-            Common.logger.info("le client " + player.getName() + " a été enregistré");
-            throw new RemoteException("plz change the pseudo name");
+            Common.logger.info("le client " + player.getName() + " existe déjà");
+            throw new RemoteException("Veuillez changer le pseudo nom");
         }
     }
 
@@ -57,6 +55,7 @@ public class Server extends UnicastRemoteObject implements ServerDistant {
     public void disconnectPlayer(Player player) throws RemoteException {
         boolean removed = this.players.remove(player);
         playersInWait.remove(player);
+        names.remove(player.getName());
         System.out.println(removed);
         System.gc();
         System.runFinalization();
@@ -82,19 +81,19 @@ public class Server extends UnicastRemoteObject implements ServerDistant {
     @Override
     public String joinRoom(Player player) throws RemoteException {
         try {
-            System.out.println("clientsInWait " + playersInWait.size());
             if (playersInWait.size() == 0) {
                 this.game = new Game(this);
                 game.gameStatus = GameStatus.Waiting;
                 sessionId = -1;
                 this.notyet = true;
                 playersInWait.add(player);
+                names.add(player.getName());
                 game.players.put("X", player);
                 return "X";
             } else if (playersInWait.size() == 1) {
                 playersInWait.add(player);
                 game.players.put("O", player);
-                System.out.println("Hi I am here");
+                names.add(player.getName());
                 informPlayers(1);
                 return "O";
             }
@@ -103,7 +102,6 @@ public class Server extends UnicastRemoteObject implements ServerDistant {
         }
         throw new RemoteException("Server is full");
     }
-
 
     @Override
     public int getSessionId(String name) throws RemoteException, MalformedURLException {
@@ -133,7 +131,7 @@ public class Server extends UnicastRemoteObject implements ServerDistant {
     public String playVsComputer(Player player) throws RemoteException {
         try {
             Game game = new Game(this);
-            Player computer = new ComputerPlayer(game, "O", new Minimax("O"));
+            Player computer = new ComputerPlayer(game, "O", new AlphaBeta("O"));
             game.players.put("X", player);
             game.players.put("O", computer);
             game.gameStatus = GameStatus.Running;
@@ -147,15 +145,16 @@ public class Server extends UnicastRemoteObject implements ServerDistant {
 
     private void fresh() {
         playersInWait = new ArrayList<>();
+        this.names = new ArrayList<>();
         Common.logger.info("new Clients In Wait");
     }
 
     public void informPlayers(int res) throws RemoteException {
-        playersInWait.get(0).addMessage(playersInWait.get(0).getName() + " rejoint le jeu ");
+        playersInWait.get(0).addMessage(names.get(0) + " rejoint le jeu ");
+        playersInWait.get(0).addMessage(names.get(1) + " rejoint le jeu en tant que joueur O");
         playersInWait.get(0).meetingRoomRespond(res);
             /*for (Player player : playersInWait) {
-
-            }*/
+                   }*/
             /*for (Map.Entry<String, Player> entry : players.entrySet()) {
                 String key = entry.getKey();
                 Player value = entry.getValue();

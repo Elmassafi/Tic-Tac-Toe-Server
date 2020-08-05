@@ -2,6 +2,9 @@ import java.net.MalformedURLException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
+/**
+ * @author Anas EL Massafi
+ */
 public interface ServerDistant extends Remote {
     void registerPlayer(Player Player) throws RemoteException;
 
