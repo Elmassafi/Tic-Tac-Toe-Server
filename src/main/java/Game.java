@@ -110,4 +110,21 @@ public class Game extends UnicastRemoteObject implements GameDistant {
         sendMessage("Server : " + name + " a abandonné le jeu");
 
     }
+
+    @Override
+    public void informPlayers(int res) throws RemoteException {
+        for (Map.Entry<String, Player> entry : players.entrySet()) {
+            String key = entry.getKey();
+            Player value = entry.getValue();
+            sendMessage("Server : " + value.getName() + " rejoint le jeu en tant que joueur " + key);
+            Common.logger.info("Server : " + value.getName() + " rejoint le jeu en tant que joueur " + key);
+            if (key.equals("X")) {
+                System.out.println("Info X");
+                value.meetingRoomRespond(1);
+            }
+        }
+        /*playersInWait.get(0).addMessage(names.get(0) + " rejoint le jeu ");
+        playersInWait.get(0).addMessage(names.get(1) + );
+        playersInWait.get(0).meetingRoomRespond(res);*/
+    }
 }

@@ -10,4 +10,6 @@ public interface GameDistant extends Remote {
     void playMove(String mark, int move) throws RemoteException;
 
     void abandonGame(String name) throws RemoteException;
+
+    void informPlayers(int res) throws RemoteException;
 }

@@ -94,7 +94,8 @@ public class Server extends UnicastRemoteObject implements ServerDistant {
                 playersInWait.add(player);
                 game.players.put("O", player);
                 names.add(player.getName());
-                informPlayers(1);
+                game.gameStatus = GameStatus.Running;
+                //informPlayers(1);
                 return "O";
             }
         } catch (NullPointerException e) {
@@ -114,6 +115,7 @@ public class Server extends UnicastRemoteObject implements ServerDistant {
                     Naming.rebind("tictactoe/" + sessionId, game);
                     notyet = false;
                     Common.logger.info("sessionId: " + sessionId);
+                    game.informPlayers(1);
                 } catch (RemoteException | MalformedURLException e) {
                     Common.logger.warning(e.getMessage());
                     throw e;
@@ -161,10 +163,5 @@ public class Server extends UnicastRemoteObject implements ServerDistant {
         Common.logger.info("new Clients In Wait");
     }
 
-    public void informPlayers(int res) throws RemoteException {
-        playersInWait.get(0).addMessage(names.get(0) + " rejoint le jeu ");
-        playersInWait.get(0).addMessage(names.get(1) + " rejoint le jeu en tant que joueur O");
-        playersInWait.get(0).meetingRoomRespond(res);
-    }
 }
 

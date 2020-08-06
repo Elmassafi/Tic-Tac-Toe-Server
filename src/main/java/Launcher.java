@@ -8,7 +8,6 @@ import java.util.logging.Level;
 public class Launcher {
 
     public static void main(String[] args) {
-        //  new ServerGUI().setVisible(true);
         DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
         Calendar cal = Calendar.getInstance();
         //System.out.println(dateFormat.format(cal.getTime()));
