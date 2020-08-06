@@ -45,7 +45,6 @@ public class Game extends UnicastRemoteObject implements GameDistant {
             server.fresh();
             notyet = false;
         }*/
-        System.out.println(mark + " " + move + " turn for" + turn);
         String result = Common.checkWin(this.moves);
         if (!result.equals("No")) {
             gameDone(result);
@@ -119,7 +118,6 @@ public class Game extends UnicastRemoteObject implements GameDistant {
             sendMessage("Server : " + value.getName() + " rejoint le jeu en tant que joueur " + key);
             Common.logger.info("Server : " + value.getName() + " rejoint le jeu en tant que joueur " + key);
             if (key.equals("X")) {
-                System.out.println("Info X");
                 value.meetingRoomRespond(1);
             }
         }

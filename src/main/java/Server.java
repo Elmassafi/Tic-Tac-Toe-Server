@@ -16,7 +16,6 @@ public class Server extends UnicastRemoteObject implements ServerDistant {
     private List<Player> playersInWait = new ArrayList<>();
     private Game game;
     private boolean notyet = true;
-    private List<String> names = new ArrayList<>();
 
     Server() throws RemoteException {
         players = new ArrayList<>();
@@ -55,8 +54,6 @@ public class Server extends UnicastRemoteObject implements ServerDistant {
     public void disconnectPlayer(Player player) throws RemoteException {
         boolean removed = this.players.remove(player);
         playersInWait.remove(player);
-        names.remove(player.getName());
-        System.out.println(removed);
         System.gc();
         System.runFinalization();
         if (removed) {
@@ -87,13 +84,11 @@ public class Server extends UnicastRemoteObject implements ServerDistant {
                 sessionId = -1;
                 this.notyet = true;
                 playersInWait.add(player);
-                names.add(player.getName());
                 game.players.put("X", player);
                 return "X";
             } else if (playersInWait.size() == 1) {
                 playersInWait.add(player);
                 game.players.put("O", player);
-                names.add(player.getName());
                 game.gameStatus = GameStatus.Running;
                 //informPlayers(1);
                 return "O";
@@ -106,7 +101,6 @@ public class Server extends UnicastRemoteObject implements ServerDistant {
 
     @Override
     public int getSessionId(String name) throws RemoteException, MalformedURLException {
-        System.out.println("clientsInWait " + playersInWait.size());
         if (playersInWait.size() == 2) {
             if (notyet) {
                 try {
@@ -159,7 +153,6 @@ public class Server extends UnicastRemoteObject implements ServerDistant {
 
     private void fresh() {
         playersInWait = new ArrayList<>();
-        this.names = new ArrayList<>();
         Common.logger.info("new Clients In Wait");
     }
 

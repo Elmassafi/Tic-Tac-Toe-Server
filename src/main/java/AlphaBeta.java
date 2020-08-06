@@ -30,13 +30,11 @@ public class AlphaBeta implements Algorithm {
             move = new Integer(getAvailableMoves(board).get(0));
             // this.board = clone;
             int bestScore = Integer.MIN_VALUE;
-            System.out.println("Min Value " + bestScore);
             for (int i = 0; i < board.size(); i++) {
                 if (!board.get(i).equals("X") && !board.get(i).equals("O")) {
                     board.set(i, ai);
                     int score = minimax(board, 0, Integer.MIN_VALUE, Integer.MAX_VALUE, false);
                     board.set(i, "" + i);
-                    System.out.println("score: " + score + " &&  bestScore:" + bestScore);
                     if (score > bestScore) {
                         bestScore = score;
                         move = i;
@@ -44,7 +42,6 @@ public class AlphaBeta implements Algorithm {
                 }
             }
         }
-        System.out.println("Moves Chose by aI is " + move);
         return move;
     }
 
